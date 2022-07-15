@@ -17,7 +17,7 @@ By accessing your localhost in the port 8866 (http://localhost:8866), you will b
 
 The ready dockerized version will be available in docker hub after publication.
 
-## Contributors on Ethos
+## Contributors
 Name | Email
 --- | ---
 Anonymous | Anonymous
