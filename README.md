@@ -4,8 +4,7 @@ Transformers are widely used in NLP, where they consistently achieve state-of-th
 Regarding the trained ML models, a note with the repo containing them will be added in the folder models after publication.
 
 ## Instructions
-Please ensure you have docker installed on your desktop. If you want to build the docker by yourself please download this repo.
- the folder lionets with the requirements.txt file and name the zip "lionets.zip". Then:
+Please ensure you have docker installed on your desktop. If you want to build the docker by yourself please download this repo. Then:
 ```bash
 cd repo/docker 
 docker build -t vizualization_tool .
