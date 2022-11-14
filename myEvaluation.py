@@ -4,11 +4,12 @@ from sklearn.metrics import precision_recall_curve, auc
 import numpy as np
 
 class MyEvaluation:
-	def __init__(self, label_names, predict, sentence_level):
+	def __init__(self, label_names, predict, sentence_level, evaluation_level_all=True):
 		self.label_names = label_names
 		self.predict = predict
 		self.sentence_level = sentence_level
 		self.saved_state = {}
+		self.evaluation_level_all = evaluation_level_all
 
 	def clear_states(self):
 		"""
@@ -19,7 +20,11 @@ class MyEvaluation:
 	def fix_instance(self, instance):
 		"""
 			This function takes an instance like "The tok ##en ##ized sentence" and transforms it to "The tokenized sentence"
-		"""
+		Args:
+			instance: The input sequence to be fixed from tokenized to original
+		Return:
+			new_sentence[1:]: The original sentence
+		"""		
 		new_sentence = ''
 		temp_split = instance.split()
 		for i in range(0,len(temp_split)):
@@ -30,6 +35,13 @@ class MyEvaluation:
 		return new_sentence[1:]
 
 	def _find_sign(self, weight):
+		"""
+			This function identifies the sign of a weight
+		Args:
+			weight: The weight of which the sign we want to identify
+		Return: 
+			sign: The sign of the weights
+		"""		
 		if weight < 0:
 			sign = 'negative'
 		elif weight > 0:
@@ -39,6 +51,13 @@ class MyEvaluation:
 		return sign
 
 	def _apply_activation(self, pred1, pred2):
+		"""
+			This function identifies the sign of a weight
+		Args:
+			weight: The weight of which the sign we want to identify
+		Return:
+			predicted_labels: the predicted labels after the softmax or sigmoid functions
+		"""		
 		if len(self.label_names) == 2:
 			predicted_labels = softmax([pred1,pred2], axis = 1)
 		else:
@@ -49,12 +68,26 @@ class MyEvaluation:
 		return predicted_labels
 
 	def nzw(self, interpretation, tweaked_interpretation, instance, prediction, tokens, hidden_states, t_hidden_states, rationales):
+		"""
+			This function evaluates an interpretation uzing the nzw/non-zero-weights (complexity) metric
+		Args:
+			interpretation: The interpretations of the instance's prediction
+			tweaked_interpretation: The interpretations of the tweaked instance's prediction (useful for robustness)
+			instance: The input sequence to be fixed from tokenized to original
+			prediction: The prediction regarding the input sequence
+			tokens: The input sequence but tokenized
+			hidden_states: The hidden states reagrding that instance extracted by the model
+			t_hidden_states: The hidden states reagrding the tweaked instance extracted by the model (useful for robustness)
+			rationales: The rationales (ground truth explanations - useful for auprc)
+		Return:
+			av_nzw: The average nzw score for each interpretation per label
+		"""	
 		av_nzw = []
 		predicted_labels = self._apply_activation(prediction, prediction)[0]
 
 		if(self.sentence_level == True):
 			for label in range(len(self.label_names)):
-				if predicted_labels[label]>=0.5:
+				if predicted_labels[label]>=0.5 or self.evaluation_level_all:
 					non_zero = 0
 					threshold = 0.01
 					for i in range(len(interpretation[label])):  
@@ -66,9 +99,9 @@ class MyEvaluation:
 			return av_nzw
 
 		for label in range(len(self.label_names)):
-			if predicted_labels[label]>=0.5:
+			if predicted_labels[label]>=0.5 or self.evaluation_level_all:
 				non_zero = 0
-				threshold = 0.01
+				threshold = 0.000000001
 				for i in range(len(interpretation[label])):  
 					if abs(interpretation[label][i]) > threshold:
 						non_zero += 1
@@ -78,12 +111,26 @@ class MyEvaluation:
 		return av_nzw
 
 	def faithfulness(self, interpretation, tweaked_interpretation, instance, prediction, tokens, hidden_states, t_hidden_states, rationales):
+		"""
+			This function evaluates an interpretation uzing the faithdulness score (F) metric
+		Args:
+			interpretation: The interpretations of the instance's prediction
+			tweaked_interpretation: The interpretations of the tweaked instance's prediction (useful for robustness)
+			instance: The input sequence to be fixed from tokenized to original
+			prediction: The prediction regarding the input sequence
+			tokens: The input sequence but tokenized
+			hidden_states: The hidden states reagrding that instance extracted by the model
+			t_hidden_states: The hidden states reagrding the tweaked instance extracted by the model (useful for robustness)
+			rationales: The rationales (ground truth explanations - useful for auprc)
+		Return:
+			avg_diff: The average faithfulness score for each interpretation per label
+		"""	
 		avg_diff = []
 		predicted_labels = self._apply_activation(prediction, prediction)[0]
 
 		for label in range(len(self.label_names)):
 
-			if predicted_labels[label]>=0.5:
+			if predicted_labels[label]>=0.5 or self.evaluation_level_all:
 
 				#print('For label:',self.label_names[label])
 				absmax_index = np.argmax(interpretation[label])
@@ -98,7 +145,7 @@ class MyEvaluation:
 					temp_tokens[absmax_index] = ''
 					temp_instance = ' '.join(temp_tokens)
 				else:
-					temp_tokens[absmax_index+1] = '[UNK]' # add '' to test the classic removal process
+					temp_tokens[absmax_index+1] = '[UNK]'
 					temp_instance = self.fix_instance(' '.join(temp_tokens[1:-1]))
 				if temp_instance in self.saved_state:
 					temp_prediction = self.saved_state[temp_instance]
@@ -118,12 +165,26 @@ class MyEvaluation:
 		return avg_diff
 
 	def truthfulness(self, interpretation, tweaked_interpretation, instance, prediction, tokens, hidden_states, t_hidden_states, rationales):
+		"""
+			This function evaluates an interpretation uzing the truthfulness metric
+		Args:
+			interpretation: The interpretations of the instance's prediction
+			tweaked_interpretation: The interpretations of the tweaked instance's prediction (useful for robustness)
+			instance: The input sequence to be fixed from tokenized to original
+			prediction: The prediction regarding the input sequence
+			tokens: The input sequence but tokenized
+			hidden_states: The hidden states reagrding that instance extracted by the model
+			t_hidden_states: The hidden states reagrding the tweaked instance extracted by the model (useful for robustness)
+			rationales: The rationales (ground truth explanations - useful for auprc)
+		Return:
+			avg_diff: The average truthfulness score for each interpretation per label
+		"""	
 		avg_diff = []
 		predicted_labels = self._apply_activation(prediction, prediction)[0]
 
 		for label in range(len(self.label_names)):
 
-			if predicted_labels[label]>=0.5:
+			if predicted_labels[label]>=0.5 or self.evaluation_level_all:
 				truthful = 0
 				my_range = len(tokens) if self.sentence_level else len(tokens)-2
 				#print('For label:',self.label_names[label])
@@ -135,7 +196,7 @@ class MyEvaluation:
 						temp_tokens[token] = ''
 						temp_instance = ' '.join(temp_tokens)
 					else:
-						temp_tokens[token+1] = '[UNK]' # add '' to test the classic removal process
+						temp_tokens[token+1] = '[UNK]'
 						temp_instance = self.fix_instance(' '.join(temp_tokens[1:-1]))
 
 					sign = 	self._find_sign(interpretation[label][token])
@@ -163,11 +224,25 @@ class MyEvaluation:
 		return avg_diff
 
 	def faithful_truthfulness(self, interpretation, tweaked_interpretation, instance, prediction, tokens, hidden_states, t_hidden_states, rationales):
+		"""
+			This function evaluates an interpretation uzing the Faithful Truthfulness score (FT) metric
+		Args:
+			interpretation: The interpretations of the instance's prediction
+			tweaked_interpretation: The interpretations of the tweaked instance's prediction (useful for robustness)
+			instance: The input sequence to be fixed from tokenized to original
+			prediction: The prediction regarding the input sequence
+			tokens: The input sequence but tokenized
+			hidden_states: The hidden states reagrding that instance extracted by the model
+			t_hidden_states: The hidden states reagrding the tweaked instance extracted by the model (useful for robustness)
+			rationales: The rationales (ground truth explanations - useful for auprc)
+		Return:
+			avg_diff: The average FT score for each interpretation per label
+		"""	
 		avg_diff = []
 		predicted_labels = self._apply_activation(prediction, prediction)[0]
 
 		for label in range(len(self.label_names)):
-			if predicted_labels[label]>=0.5: # :| h gia ola?????? pfff
+			if predicted_labels[label]>=0.5 or self.evaluation_level_all: # :| h gia ola?????? pfff
 
 				score = 0
 				my_range = len(tokens) if self.sentence_level else len(tokens)-2
@@ -180,7 +255,7 @@ class MyEvaluation:
 						temp_tokens[token] = ''
 						temp_instance = ' '.join(temp_tokens)
 					else:
-						temp_tokens[token+1] = '[UNK]' # add '' to test the classic removal process
+						temp_tokens[token+1] = '[UNK]'
 						temp_instance = self.fix_instance(' '.join(temp_tokens[1:-1]))
 
 					sign = 	self._find_sign(interpretation[label][token])
@@ -204,11 +279,25 @@ class MyEvaluation:
 		return avg_diff
 
 	def faithful_truthfulness_penalty(self, interpretation, tweaked_interpretation, instance, prediction, tokens, hidden_states, t_hidden_states, rationales):
+		"""
+			This function evaluates an interpretation uzing the Ranked Faithful Truthfulness score (RFT) metric
+		Args:
+			interpretation: The interpretations of the instance's prediction
+			tweaked_interpretation: The interpretations of the tweaked instance's prediction (useful for robustness)
+			instance: The input sequence to be fixed from tokenized to original
+			prediction: The prediction regarding the input sequence
+			tokens: The input sequence but tokenized
+			hidden_states: The hidden states reagrding that instance extracted by the model
+			t_hidden_states: The hidden states reagrding the tweaked instance extracted by the model (useful for robustness)
+			rationales: The rationales (ground truth explanations - useful for auprc)
+		Return:
+			avg_diff: The average RFT score for each interpretation per label
+		"""	
 		avg_diff = []
 		predicted_labels = self._apply_activation(prediction, prediction)[0]
 
 		for label in range(len(self.label_names)):
-			if predicted_labels[label]>=0.5: 
+			if predicted_labels[label]>=0.5 or self.evaluation_level_all: # :| h gia ola?????? pfff
 
 				a = interpretation[label]
 				if np.unique(a).shape[0] == 1:
@@ -237,7 +326,7 @@ class MyEvaluation:
 						temp_tokens[token] = ''
 						temp_instance = ' '.join(temp_tokens)
 					else:
-						temp_tokens[token+1] = '[UNK]' # add '' to test the classic removal process
+						temp_tokens[token+1] = '[UNK]'
 						temp_instance = self.fix_instance(' '.join(temp_tokens[1:-1]))
 
 					sign = 	self._find_sign(interpretation[label][token])
@@ -260,12 +349,26 @@ class MyEvaluation:
 		return avg_diff
 
 	def robustness(self, interpretation, tweaked_interpretation, instance, prediction, tokens, hidden_states, t_hidden_states, rationales):
+		"""
+			This function evaluates an interpretation uzing the Robustness metric
+		Args:
+			interpretation: The interpretations of the instance's prediction
+			tweaked_interpretation: The interpretations of the tweaked instance's prediction (useful for robustness)
+			instance: The input sequence to be fixed from tokenized to original
+			prediction: The prediction regarding the input sequence
+			tokens: The input sequence but tokenized
+			hidden_states: The hidden states reagrding that instance extracted by the model
+			t_hidden_states: The hidden states reagrding the tweaked instance extracted by the model (useful for robustness)
+			rationales: The rationales (ground truth explanations - useful for auprc)
+		Return:
+			avg_diff: The average Robustness score for each interpretation per label
+		"""	
 		avg_diff = []
 		h = np.linalg.norm(hidden_states[0].mean(axis=0)-t_hidden_states[0].mean(axis=0))
 		predicted_labels = self._apply_activation(prediction, prediction)[0]
 
 		for label in range(len(self.label_names)):
-			if predicted_labels[label]>=0.5:
+			if predicted_labels[label]>=0.5 or self.evaluation_level_all:
 				diff = interpretation[label]-tweaked_interpretation[label]
 				norm_l2 = np.linalg.norm(np.array(diff))
 				if h != 0:
@@ -277,15 +380,27 @@ class MyEvaluation:
 		return avg_diff
 
 	def auprc(self, interpretation, tweaked_interpretation, instance, prediction, tokens, hidden_states, t_hidden_states, rationales):
+		"""
+			This function evaluates an interpretation uzing the AUPRC metric
+		Args:
+			interpretation: The interpretations of the instance's prediction
+			tweaked_interpretation: The interpretations of the tweaked instance's prediction (useful for robustness)
+			instance: The input sequence to be fixed from tokenized to original
+			prediction: The prediction regarding the input sequence
+			tokens: The input sequence but tokenized
+			hidden_states: The hidden states reagrding that instance extracted by the model
+			t_hidden_states: The hidden states reagrding the tweaked instance extracted by the model (useful for robustness)
+			rationales: The rationales (ground truth explanations - useful for auprc)
+		Return:
+			avg_diff: The average AUPRC score for each interpretation per label
+		"""	
 		aucs = []
-
 		predicted_labels = self._apply_activation(prediction, prediction)[0]
 
 		for label in range(len(self.label_names)):
-			if predicted_labels[label]>=0.5:
+			if predicted_labels[label]>=0.5 or self.evaluation_level_all: 
 				label_auc = []
-				if rationales[label] != 0:
-					#print(interpretation[label], rationales[label])
+				if rationales[label] != 0 and sum(rationales[label]) != 0:
 					precision, recall, _ = precision_recall_curve(rationales[label],interpretation[label])
 					label_auc.append(auc(recall, precision))
 				aucs.append(np.average(label_auc))
