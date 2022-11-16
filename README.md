@@ -14,7 +14,11 @@ Transformers are widely used in natural language processing, where they consiste
 
 ## Applicability
 - Optimus code is applicable currently for BERT and DistilBERT
-- Works only for Text Classification tasks (binary and multi-label, not adapted for multi-class)
+- Works only for Text Classification tasks (binary and multi-label, not adapted for multi-class yet)
+
+## Currently Working
+- Different transformer models
+- Different downstream tasks (for example NER)
 
 ## Requirements
 For the requirements just check the req.txt file.
