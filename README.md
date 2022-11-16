@@ -3,9 +3,9 @@
 This GitHub contains the code of the experiments for our paper, and an example on how to easily use it in your pipeline. The folder "[olderVersion](https://github.com/intelligence-csd-auth-gr/Optimus-Transformers-Interpretability/tree/main/olderVersion)" contains the code for the [preliminary version of our paper](https://arxiv.org/abs/2209.10876). 
 
 <table align="center" cellspacing="0" cellpadding="0" style="border: none;">
-    <tr>
-        <td> <img src="https://github.com/intelligence-csd-auth-gr/Optimus-Transformers-Interpretability/blob/main/logo.png?raw=true" width="260"  height="260"></td>
-        <td align="center"><p><h2>Optimus Tranformers Interpretability</h2><h4>Local Attention-based Interpretation of Transformers in Text Classification</h4></p></td>
+    <tr style="border: none;">
+        <td style="border: none;"> <img src="https://github.com/intelligence-csd-auth-gr/Optimus-Transformers-Interpretability/blob/main/logo.png?raw=true" width="260"  height="260"></td>
+        <td align="center" style="border: none;"><p><h2>Optimus Tranformers Interpretability</h2><h4>Local Attention-based Interpretation of Transformers in Text Classification</h4></p></td>
     </tr>
 </table>
 
