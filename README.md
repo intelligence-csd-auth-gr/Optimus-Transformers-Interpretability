@@ -12,8 +12,11 @@ This GitHub contains the code of the experiments for our paper, and an example o
 ## Abstract
 Transformers are widely used in natural language processing, where they consistently achieve state-of-the-art performance. This is mainly due to their attention-based architecture, which allows them to model rich linguistic relations between (sub)words. However, transformers are difficult to interpret. Being able to provide reasoning for its decisions is an important property for a model in domains where human lives are affected. With transformers finding wide use in such fields, the need for interpretability techniques tailored to them arises. We propose a new technique that selects the most faithful attention-based interpretation among the several ones that can be obtained by combining different head, layer and matrix operations. In addition, two variations are introduced towards (i) reducing the computational complexity, thus being faster and friendlier to the environment, and (ii) enhancing the performance in multi-label data. We further propose a new faithfulness metric that is more suitable for transformer models and exhibits high correlation with the area under the precision-recall curve based on ground truth rationales. We validate our claims with a series of quantitative and qualitative experiments on seven datasets.
 
-## Requirements
+## Applicability
+- Optimus code is applicable currently for BERT and DistilBERT
+- Works only for Text Classification tasks (binary and multi-label, not adapted for multi-class)
 
+## Requirements
 For the requirements just check the req.txt file.
 
 ## Example
