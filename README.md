@@ -4,7 +4,7 @@ This GitHub contains the code of the experiments for our paper, and an example o
 
 <table align="center">
     <tr>
-        <td> <img src="https://github.com/intelligence-csd-auth-gr/LionLearn/blob/master/lionLearnLogo.png" width="100"  height="100"></td>
+        <td> <img src="https://github.com/intelligence-csd-auth-gr/Optimus-Transformers-Interpretability/blob/master/logo.png" width="100"  height="100"></td>
         <td align="center"><p><h2>Optimus</h2><h4>Local Attention-based Interpretation of Transformers in Text Classification</h4></p></td>
     </tr>
 </table>
