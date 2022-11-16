@@ -4,7 +4,7 @@ This GitHub contains the code of the experiments for our paper, and an example o
 
 <table align="center" cellspacing="0" cellpadding="0" style="border-collapse: collapse !important; border: none !important;">
     <tr style="border: none !important;">
-        <td style="border: none !important;"> <img src="https://github.com/intelligence-csd-auth-gr/Optimus-Transformers-Interpretability/blob/main/logo.png?raw=true" width="260"  height="260"></td>
+        <td style="border: none !important;"> <img src="https://github.com/intelligence-csd-auth-gr/Optimus-Transformers-Interpretability/blob/main/logo.png?raw=true" width="280"  height="280"></td>
         <td align="center" style="border: none !important;"><p><h2>Optimus Tranformers Interpretability</h2><h4>Local Attention-based Interpretation of Transformers in Text Classification</h4></p></td>
     </tr>
 </table>
