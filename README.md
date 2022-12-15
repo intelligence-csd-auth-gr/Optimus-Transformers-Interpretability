@@ -1,6 +1,6 @@
 # Optimus
 
-This GitHub contains the code of the experiments for our paper, and an example on how to easily use it in your pipeline. The folder "[olderVersion](https://github.com/intelligence-csd-auth-gr/Optimus-Transformers-Interpretability/tree/main/olderVersion)" contains the code for the [preliminary version of our paper](https://arxiv.org/abs/2209.10876). 
+This GitHub contains the code of the experiments for our paper, and an example on how to easily use it in your pipeline. The folder "[olderVersion](https://github.com/intelligence-csd-auth-gr/Optimus-Transformers-Interpretability/tree/main/olderVersion)" contains the code for the [preliminary version of our paper](https://arxiv.org/abs/2209.10876).  The trained models used for our experiments can be found [here](https://drive.google.com/drive/folders/1fkNhyVUhalxn3yM6rUCJ5lBD7T88yH6-?usp=sharing)
 
 <table align="center" cellspacing="0" cellpadding="0" style="border-collapse: collapse !important; border: none !important;">
     <tr style="border: none !important;">
