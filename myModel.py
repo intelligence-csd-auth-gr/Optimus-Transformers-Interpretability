@@ -60,42 +60,42 @@ class MyModel:
 			cs = '-cased'
 		else:
 			cs = '-uncased'
-			if self.model_name.lower() == 'bert':
-				from transformers import BertTokenizerFast
-				self.tokenizer = BertTokenizerFast.from_pretrained(
-					'bert-base'+cs)
-				if self.task.lower() == 'single_label':
-					from transformers import \
-						BertForSequenceClassification as transformer_model
-				else:
-					from myTransformer import \
-						BertForMultilabelSequenceClassification as \
-						transformer_model
-			elif self.model_name.lower() == 'distilbert':
-				from transformers import DistilBertTokenizerFast
-				self.tokenizer = DistilBertTokenizerFast.from_pretrained(
-					'distilbert-base'+cs)
-				if self.task.lower() == 'single_label':
-					from transformers import \
-						DistilBertForSequenceClassification as \
-						transformer_model
-				else:
-					from myTransformer import \
-						DistilBertForMultilabelSequenceClassification as \
-						transformer_model
+		if self.model_name.lower() == 'bert':
+			from transformers import BertTokenizerFast
+			self.tokenizer = BertTokenizerFast.from_pretrained(
+				'bert-base'+cs)
 			if self.task.lower() == 'single_label':
-				model = transformer_model.from_pretrained(self.path+self.dataset_name, output_attentions=True,
-															output_hidden_states=True)
+				from transformers import \
+					BertForSequenceClassification as transformer_model
 			else:
-				model = transformer_model.from_pretrained(self.path+self.dataset_name, num_labels = self.labels, output_attentions=True,
-															output_hidden_states=True)
-			# utils.logging.disable_progress_bar() #Enable this line to allow it to run in terminal. Comment this line to run it in notebooks/colab
-			training_arguments = TrainingArguments(evaluation_strategy='epoch', save_strategy='epoch', logging_strategy='epoch',
-													log_level='critical', output_dir='./results', num_train_epochs=1,
-													per_device_train_batch_size=8, per_device_eval_batch_size=8,
-													warmup_steps=200, weight_decay=0.01, logging_dir='./logs'
-													)
-			self.trainer = Trainer(model=model, args=training_arguments)
+				from myTransformer import \
+					BertForMultilabelSequenceClassification as \
+					transformer_model
+		elif self.model_name.lower() == 'distilbert':
+			from transformers import DistilBertTokenizerFast
+			self.tokenizer = DistilBertTokenizerFast.from_pretrained(
+				'distilbert-base'+cs)
+			if self.task.lower() == 'single_label':
+				from transformers import \
+					DistilBertForSequenceClassification as \
+					transformer_model
+			else:
+				from myTransformer import \
+					DistilBertForMultilabelSequenceClassification as \
+					transformer_model
+		if self.task.lower() == 'single_label':
+			model = transformer_model.from_pretrained(self.path+self.dataset_name, output_attentions=True,
+														output_hidden_states=True)
+		else:
+			model = transformer_model.from_pretrained(self.path+self.dataset_name, num_labels = self.labels, output_attentions=True,
+														output_hidden_states=True)
+		# utils.logging.disable_progress_bar() #Enable this line to allow it to run in terminal. Comment this line to run it in notebooks/colab
+		training_arguments = TrainingArguments(evaluation_strategy='epoch', save_strategy='epoch', logging_strategy='epoch',
+												log_level='critical', output_dir='./results', num_train_epochs=1,
+												per_device_train_batch_size=8, per_device_eval_batch_size=8,
+												warmup_steps=200, weight_decay=0.01, logging_dir='./logs'
+												)
+		self.trainer = Trainer(model=model, args=training_arguments)
 
 	def __get_additional_info_from_trainer__(self):
 		"""This function initialize parameters such as number of heads, layers, embedding size, according to the model. 
