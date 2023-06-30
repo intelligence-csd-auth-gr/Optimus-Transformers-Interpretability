@@ -6,6 +6,7 @@ from transformers_interpret import SequenceClassificationExplainer
 import numpy as np
 from myModel import MyDataset
 import tensorflow as tf
+import warnings
 
 class MyExplainer:
 	""" MyExplainer class contains the implementation of multiple interpretation techniques including LIME, IG and Attention (but not Optimus)"""
@@ -151,6 +152,34 @@ class MyExplainer:
 			interpretations = self.convert_to_sentence(tokens, interpretations)
 		return interpretations
 
+	def _run(
+		self,
+		text: str,
+		index: int = None,
+		class_name: str = None,
+		embedding_type: int = None,
+	) -> list:  # type: ignore
+		if embedding_type is None:
+			embeddings = self.ig_explainer.word_embeddings
+		else:
+			if embedding_type == 0:
+				embeddings = self.ig_explainer.word_embeddings
+			elif embedding_type == 1:
+				if self.ig_explainer.accepts_position_ids and self.ig_explainer.position_embeddings is not None:
+					embeddings = self.ig_explainer.position_embeddings
+				else:
+					warnings.warn(
+						"This model doesn't support position embeddings for attributions. Defaulting to word embeddings"
+					)
+					embeddings = self.ig_explainer.word_embeddings
+			else:
+				embeddings = self.ig_explainer.word_embeddings
+
+		self.ig_explainer.text = text
+
+		self.ig_explainer._calculate_attributions(embeddings=embeddings, index=index, class_name=class_name)
+		return self.ig_explainer.word_attributions  # type: ignore
+
 	def ig(self, instance, prediction, tokens, mask, attention, hidden_states):
 		""" This function represents the IG explainer. From the arguments it uses only the tokens
 		Args:
@@ -160,7 +189,23 @@ class MyExplainer:
 		"""
 		interpretations = []
 		for label in range(len(self.label_names)):
-			explanations = [explanation[1] for explanation in self.ig_explainer(instance, index=label, internal_batch_size=10, n_steps=50)[1:-1]]
+			self.ig_explainer.n_steps = 50
+			self.ig_explainer.internal_batch_size = 10
+
+			#for roberta
+			if self.model.model_name.lower() == 'roberta':
+				explanations = [explanation[1] for explanation in self._run(instance, index=label)[1:-1]]
+			
+   			#for albert
+			elif self.model.model_name.lower() == 'albert':
+				explanations = [explanation[1] for explanation in self._run(instance, index=label)[1:-1]]
+
+
+			#for bert/distilbert
+			elif self.model.model_name.lower() == 'bert' or self.model.model_name.lower() == 'distilbert':
+				explanations = [explanation[1] for explanation in self.ig_explainer(instance, index=label, internal_batch_size=10, n_steps=50)[1:-1]]
+			else:
+				warnings.warn('The model is not supported')
 			interpretations.append(explanations)
 		if self.sentence_level:
 			interpretations = self.convert_to_sentence(tokens, interpretations)

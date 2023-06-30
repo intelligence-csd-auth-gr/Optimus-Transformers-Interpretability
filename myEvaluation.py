@@ -4,12 +4,14 @@ from sklearn.metrics import precision_recall_curve, auc
 import numpy as np
 
 class MyEvaluation:
-	def __init__(self, label_names, predict, sentence_level, evaluation_level_all=True):
+	def __init__(self, label_names, predict, sentence_level, task, evaluation_level_all=True, tokenizer=None):
 		self.label_names = label_names
 		self.predict = predict
 		self.sentence_level = sentence_level
 		self.saved_state = {}
 		self.evaluation_level_all = evaluation_level_all
+		self.task = task
+		self.tokenizer = tokenizer
 
 	def clear_states(self):
 		"""
@@ -58,13 +60,18 @@ class MyEvaluation:
 		Return:
 			predicted_labels: the predicted labels after the softmax or sigmoid functions
 		"""		
-		if len(self.label_names) == 2:
+		if (self.task == 'binary') or (self.task == 'multi-class'):
 			predicted_labels = softmax([pred1,pred2], axis = 1)
-		else:
+		# else:
+		elif (self.task == 'multi-label'):
+			# and multi label??
 			predicted_labels = [pred1,pred2]
 			a = tf.constant(predicted_labels, dtype = tf.float32)
 			b = tf.keras.activations.sigmoid(a)
 			predicted_labels = b.numpy()
+		else:
+			# Raise exception that the task hasnt been implemented yet
+			return None
 		return predicted_labels
 
 	def nzw(self, interpretation, tweaked_interpretation, instance, prediction, tokens, hidden_states, t_hidden_states, rationales):
@@ -145,8 +152,36 @@ class MyEvaluation:
 					temp_tokens[absmax_index] = ''
 					temp_instance = ' '.join(temp_tokens)
 				else:
-					temp_tokens[absmax_index+1] = '[UNK]'
-					temp_instance = self.fix_instance(' '.join(temp_tokens[1:-1]))
+					#if all tokens start with _ -> the model is ALBERT
+					do_all_tokens_start_with_ = all(token.startswith('▁') for token in temp_tokens if token!='[CLS]' and token!='[SEP]')
+		
+					#if the model is ALBERT
+					if '[CLS]' in temp_tokens and '[SEP]' in temp_tokens and do_all_tokens_start_with_==True:
+						temp_tokens[absmax_index+1] = '<unk>'
+							
+						temp_instance = self.tokenizer.convert_tokens_to_string(temp_tokens[1:-1])
+
+						#to leave a space between the previous word and '<unk>' token
+						if absmax_index > 0:
+							temp_instance = temp_instance.replace('<unk>', ' <unk>')
+						
+					#if the model is BERT/Distilbert
+					elif '[CLS]' in temp_tokens and '[SEP]' in temp_tokens and do_all_tokens_start_with_==False:
+						temp_tokens[absmax_index +1] = '[UNK]'
+
+						temp_instance = self.fix_instance(' '.join(temp_tokens[1:-1]))
+
+					#if the model is RoBERTa
+					elif '<s>' in temp_tokens:
+						temp_tokens[absmax_index+1] = '<unk>'
+						
+						temp_instance = self.tokenizer.convert_tokens_to_string(temp_tokens[1:-1])
+														
+						#to leave a space between the previous word and '<unk>' token
+						if absmax_index > 0:
+							temp_instance = temp_instance.replace('<unk>', ' <unk>')
+					else:
+						print('The model has not been implemented yet')
 				if temp_instance in self.saved_state:
 					temp_prediction = self.saved_state[temp_instance]
 				else:
@@ -196,9 +231,38 @@ class MyEvaluation:
 						temp_tokens[token] = ''
 						temp_instance = ' '.join(temp_tokens)
 					else:
-						temp_tokens[token+1] = '[UNK]'
-						temp_instance = self.fix_instance(' '.join(temp_tokens[1:-1]))
+						#if all tokens start with _ -> the model is ALBERT
+						do_all_tokens_start_with_ = do_all_tokens_start_with_ = all(token.startswith('▁') for token in temp_tokens if token!='[CLS]' and token!='[SEP]')
+		
+						#if the model is ALBERT
+						if '[CLS]' in temp_tokens and '[SEP]' in temp_tokens and do_all_tokens_start_with_==True:
+							temp_tokens[token+1] = '<unk>'
+							
+							temp_instance = self.tokenizer.convert_tokens_to_string(temp_tokens[1:-1])
 
+							#to leave a space between the previous word and '<unk>' token
+							if token > 0:
+								temp_instance = temp_instance.replace('<unk>', ' <unk>')
+								
+						#if the model is BERT/Distilbert
+						if '[CLS]' in temp_tokens and '[SEP]' in temp_tokens and do_all_tokens_start_with_==False:
+							temp_tokens[token+1] = '[UNK]'
+							
+							temp_instance = self.fix_instance(' '.join(temp_tokens[1:-1]))
+
+
+						#if the model is RoBERTa
+						elif '<s>' in temp_tokens:
+							temp_tokens[token+1] = '<unk>'
+
+
+							temp_instance = self.tokenizer.convert_tokens_to_string(temp_tokens[1:-1])
+														
+							#to leave a space between the previous word and '<unk>' token
+							if token > 0:
+								temp_instance = temp_instance.replace('<unk>', ' <unk>')
+						else:
+							print('Error, model not implemented')
 					sign = 	self._find_sign(interpretation[label][token])
 					#print('Token:',tokens[token+1],'Sign:',sign,'Weight:',interpretation[label][token])
 
@@ -255,8 +319,33 @@ class MyEvaluation:
 						temp_tokens[token] = ''
 						temp_instance = ' '.join(temp_tokens)
 					else:
-						temp_tokens[token+1] = '[UNK]'
-						temp_instance = self.fix_instance(' '.join(temp_tokens[1:-1]))
+						#if all tokens start with _ -> the model is ALBERT
+						do_all_tokens_start_with_ = do_all_tokens_start_with_ = all(token.startswith('▁') for token in temp_tokens if token!='[CLS]' and token!='[SEP]')
+		
+						#if the model is ALBERT
+						if '[CLS]' in temp_tokens and '[SEP]' in temp_tokens and do_all_tokens_start_with_==True:
+							temp_tokens[token+1] = '<unk>'
+							
+							temp_instance = self.tokenizer.convert_tokens_to_string(temp_tokens[1:-1])
+
+							#to leave a space between the previous word and '<unk>' token
+							if token > 0:
+								temp_instance = temp_instance.replace('<unk>', ' <unk>')
+						#if the model is BERT/Distilbert
+						if '[CLS]' in temp_tokens and '[SEP]' in temp_tokens and do_all_tokens_start_with_==False:
+							temp_tokens[token+1] = '[UNK]'
+
+							temp_instance = self.fix_instance(' '.join(temp_tokens[1:-1]))
+
+						#if the model is RoBERTa
+						elif '<s>' in temp_tokens:
+							temp_tokens[token+1] = '<unk>'
+
+							temp_instance = self.tokenizer.convert_tokens_to_string(temp_tokens[1:-1])
+														
+							#to leave a space between the previous word and '<unk>' token
+							if token > 0:
+								temp_instance = temp_instance.replace('<unk>', ' <unk>')
 
 					sign = 	self._find_sign(interpretation[label][token])
 
@@ -326,8 +415,35 @@ class MyEvaluation:
 						temp_tokens[token] = ''
 						temp_instance = ' '.join(temp_tokens)
 					else:
-						temp_tokens[token+1] = '[UNK]'
-						temp_instance = self.fix_instance(' '.join(temp_tokens[1:-1]))
+						#if all tokens start with _ -> the model is ALBERT
+						do_all_tokens_start_with_ = all(token.startswith('▁') for token in temp_tokens if token!='[CLS]' and token!='[SEP]')
+						
+						#if the model is ALBERT
+						if '[CLS]' in temp_tokens and '[SEP]' in temp_tokens and do_all_tokens_start_with_==True:
+							temp_tokens[token+1] = '<unk>'
+														
+							temp_instance = self.tokenizer.convert_tokens_to_string(temp_tokens[1:-1])
+
+							#to leave a space between the previous word and '<unk>' token
+							if token > 0:
+								temp_instance = temp_instance.replace('<unk>', ' <unk>')
+						#if the model is BERT/Distilbert
+						if '[CLS]' in temp_tokens and '[SEP]' in temp_tokens and do_all_tokens_start_with_ == False:
+							temp_tokens[token+1] = '[UNK]'
+
+							temp_instance = self.fix_instance(' '.join(temp_tokens[1:-1]))
+
+						#if the model is RoBERTa
+						elif '<s>' in temp_tokens:
+							temp_tokens[token+1] = '<unk>'
+
+							#roberta's tokenizer
+						
+							temp_instance = self.tokenizer.convert_tokens_to_string(temp_tokens[1:-1])
+														
+							#to leave a space between the previous word and '<unk>' token
+							if token > 0:
+								temp_instance = temp_instance.replace('<unk>', ' <unk>')
 
 					sign = 	self._find_sign(interpretation[label][token])
 

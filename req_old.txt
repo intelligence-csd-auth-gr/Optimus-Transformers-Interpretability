@@ -86,6 +86,7 @@ imbalanced-learn==0.8.1
 imgaug==0.2.6
 importlib-metadata==4.10.0
 importlib-resources==5.4.0
+intel-openmp==2022.0.1
 ipykernel==5.5.6
 ipython==6.5.0
 ipython-genutils==0.2.0
@@ -128,7 +129,7 @@ networkx==2.6.3
 nltk==3.2.5
 notebook==5.3.1
 numba==0.51.2
-numpy==1.19.5
+numpy==1.21.6
 oauthlib==3.1.1
 opencv-python==4.1.2.30
 opt-einsum==3.3.0

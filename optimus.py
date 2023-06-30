@@ -172,11 +172,15 @@ class Optimus:
         """
         self.key_list = []
         self.query_list = []
+        
         if 'distilbert' in str(type(self.model.model)).lower():
             self.model_name = 'distilbert'
-        else:
+        elif 'bert' in str(type(self.model.model)).lower():
             self.model_name = 'bert'
-
+        elif 'roberta' in str(type(self.model.model)).lower():
+            self.model_name = 'roberta'
+        elif 'albert' in str(type(self.model.model)).lower():
+            self.model_name = 'albert'
         if self.model_name.lower() == 'bert':
             self.layers = 12
             self.heads = 12
@@ -197,8 +201,32 @@ class Optimus:
                     self.model.model.distilbert.transformer.layer[i].attention.k_lin.weight.cpu().detach().numpy())
                 self.query_list.append(
                     self.model.model.distilbert.transformer.layer[i].attention.q_lin.weight.cpu().detach().numpy())
+        
+        elif self.model_name.lower() == 'roberta':
+            self.layers = 12
+            self.heads = 12
+            self.embedding_size = 768
+            self.ehe = 64 #768/12
+            for i in range(self.layers):
+                self.key_list.append(self.model.model.roberta.encoder.layer[i].attention.self.key.weight.cpu().detach().numpy())
+                self.query_list.append(self.model.model.roberta.encoder.layer[i].attention.self.query.weight.cpu().detach().numpy())
+        elif self.model_name.lower() == 'albert':
+            self.layers = 12
+            self.heads = 12 #768/64
+            self.embedding_size = 768
+            self.ehe = 64 #768/12
+            
+            #they are shared accross layers
+            keys = self.model.model.albert.encoder.albert_layer_groups[0].albert_layers[0].attention.key.weight.cpu().detach().numpy()
+            queries = self.model.model.albert.encoder.albert_layer_groups[0].albert_layers[0].attention.query.weight.cpu().detach().numpy()
+
+            #accessing keys and queries
+            for i in range(self.layers):
+                self.key_list.append(keys)
+                self.query_list.append(queries)
+        
         else:
-            print('Currently, this implementation works for BERT/DistilBERT only. You provided another model, therefore explain() function will not work.')
+            print('Currently, this implementation works for BERT/DistilBERT/RoBERTa/Albert only. You provided another model, therefore explain() function will not work.')
 
     def __identify_configurations__(self, raw_attention='A'):
         """ This function calculates the all the available combination for the attention matrices operations (head, layer, matrix level)
@@ -253,20 +281,40 @@ class Optimus:
                 has = hidden_states[la]
                 aaa = bob.self.key(torch.tensor(has).to('cuda'))
                 bbb = bob.self.query(torch.tensor(has).to('cuda'))
-            else:
+            elif self.model_name.lower() == 'distilbert':
                 bob = self.model.model.base_model.transformer.layer[la].attention
                 has = hidden_states[la]
                 aaa = bob.k_lin(torch.tensor(has).to('cuda'))
                 bbb = bob.q_lin(torch.tensor(has).to('cuda'))
+            elif self.model_name.lower() == 'roberta':
+                bob = self.model.model.roberta.encoder.layer[la].attention
+                has = hidden_states[la]
+                aaa = bob.self.key(torch.tensor(has).to('cuda'))
+                bbb = bob.self.query(torch.tensor(has).to('cuda'))
+            elif self.model_name.lower() == 'albert':
+                #they are shared accross layers
+                bob = self.model.model.albert.encoder.albert_layer_groups[0].albert_layers[0].attention
+                
+                has = hidden_states[la]
+                aaa = bob.key(torch.tensor(has).to('cuda'))
+                bbb = bob.query(torch.tensor(has).to('cuda'))
             for he in range(self.heads):
                 if self.model_name.lower() == 'bert':
                     attention_scores = torch.matmul(
                         bbb[:, he*64:(he+1)*64], aaa[:, he*64:(he+1)*64].transpose(-1, -2))
                     attention_scores = attention_scores / math.sqrt(64)
-                else:
+                elif self.model_name.lower() == 'distilbert':
                     bbb = bbb / math.sqrt(64)
                     attention_scores = torch.matmul(
                         bbb[:, he*64:(he+1)*64], aaa[:, he*64:(he+1)*64].transpose(-1, -2))
+                elif self.model_name.lower() == 'roberta':
+                    attention_scores = torch.matmul(
+                        bbb[:, he*64:(he+1)*64], aaa[:, he*64:(he+1)*64].transpose(-1, -2))
+                    attention_scores = attention_scores / math.sqrt(64)
+                elif self.model_name.lower() == 'albert':
+                    attention_scores = torch.matmul(
+                        bbb[:, he*64:(he+1)*64], aaa[:, he*64:(he+1)*64].transpose(-1, -2))
+                    attention_scores = attention_scores / math.sqrt(64)
                 if raw_attention == 'A':
                     attention_scores = torch.nn.functional.softmax(
                         attention_scores, dim=-1)

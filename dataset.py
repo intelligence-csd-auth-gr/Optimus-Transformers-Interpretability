@@ -109,6 +109,15 @@ class Dataset:
 		self.label_names = ['contradiction','entailment']
 		return self.dataset, self.label_names 
 
+	def load_esnli_multiclass(self):
+		""" This loads the ESNLI dataset for multiclass classification: Camburu, Oana-Maria, et al. "e-snli: Natural language inference with natural language explanations." Advances in Neural Information Processing Systems 31 (2018).
+		"""
+		path = '../datasets/'
+		with open(path+'esnli_multiclass.pickle', 'rb') as handle:
+			self.dataset = pickle.load(handle)
+		self.label_names = ['contradiction','entailment', 'neutral']
+		return self.dataset, self.label_names 
+
 	def load_hummingbird(self):
 		""" This loads the hummingbird dataset: Hayati, Shirley, Dongyeop Kang, and Lyle Ungar. "Does BERT Learn as Humans Perceive? Understanding Linguistic Styles through Lexica." Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing. 2021.
     	"""
@@ -241,7 +250,7 @@ class Dataset:
 		X= hoc_dict['x']
 		x_new = []
 		if preprocess:
-			 X = [my_clean(x) for x in X]
+			X = [my_clean(x) for x in X]
 		#X = [hoc_preprocess(x) for x in X]
 		for x in X:
 			splits = x.split(' ')
@@ -322,5 +331,135 @@ class Dataset:
 		self.y = y
 		self.rationales = ground_truth
 		self.label_names = ['noHateSpeech', 'hateSpeech']
+		
+		return self.x , self.y , self.label_names, self.rationales
+
+	def load_hatexplain_multiclass(self, tokenizer, preprocess=False, plot=False):
+		""" This loads the hatexplain dataset. Mathew, Binny, et al. "Hatexplain: A benchmark dataset for explainable hate speech detection." Proceedings of the AAAI Conference on Artificial Intelligence. Vol. 35. No. 17. 2021.
+    	Args:
+			tokenizer: the tokenizer to be used for spliting the input sequence and assign the rational scores
+			preprocess: if it preprocess the text
+			plot: if it plots the statistics of the dataset (number of tokens, etc.)
+    	"""
+		def getGroundTruth(key, tokens):
+			original_rationales = data[key]['rationales']
+			new_rationales = []
+			lengths = []
+			for token in tokens:
+				lengths.append(len(tokenizer.tokenize(token)))
+			for current_rationale in original_rationales:
+				tweaked_rationale = []
+				for weight, length in zip(current_rationale, lengths):
+					tweaked_rationale += length * [weight]
+				new_rationales.append(tweaked_rationale)
+
+			ground_truth = [int(any(weight)) for weight in zip(*new_rationales)]
+			return ground_truth
+
+		def preprocess(tokens):
+			for i in range(len(tokens)):
+				tokens[i] = re.sub(r"[<\*>]", "", tokens[i])
+				tokens[i] = re.sub(r"\b\d+\b", "number", tokens[i])
+			return tokens
+
+		with open(self.path+'datasets/hatexplain.json', 'r') as fp:
+				data = json.load(fp)
+		X = []
+		y = []
+		ground_truth = []
+		for key in data:
+			tokens = data[key]['post_tokens']
+			tokens = preprocess(tokens)
+			text = ' '.join(tokens)
+			annotator_labels = []
+			for i in range(3):
+					annotator_labels.append(data[key]['annotators'][i]['label'])
+		
+			final_label = max(annotator_labels, key=annotator_labels.count)
+		
+			if (annotator_labels.count(final_label) != 1):
+				if (final_label == 'hatespeech'):
+					X.append(text)
+					y.append(int(1))
+					ground_truth.append(getGroundTruth(key, tokens))
+				elif (final_label == 'offensive'):
+					X.append(text)
+					y.append(int(2))
+					ground_truth.append(getGroundTruth(key, tokens))
+				elif (final_label == 'normal'):
+					X.append(text)
+					y.append(int(0))
+					ground_truth.append(int(0))
+		
+		self.x = X
+		self.y = y
+		self.rationales = ground_truth
+		self.label_names = ['noHateSpeech', 'hateSpeech', 'offensive']
+		
+		return self.x , self.y , self.label_names, self.rationales
+
+	def load_hatexplain_multiclass_roberta(self, tokenizer, preprocess=False, plot=False):
+		""" This loads the hatexplain dataset. Mathew, Binny, et al. "Hatexplain: A benchmark dataset for explainable hate speech detection." Proceedings of the AAAI Conference on Artificial Intelligence. Vol. 35. No. 17. 2021.
+    	Args:
+			tokenizer: the tokenizer to be used for spliting the input sequence and assign the rational scores
+			preprocess: if it preprocess the text
+			plot: if it plots the statistics of the dataset (number of tokens, etc.)
+    	"""
+		def getGroundTruth(key, tokens):
+			# original_rationales = data[key]['rationales']
+			# new_rationales = []
+			# lengths = []
+			# for token in tokens:
+			# 	lengths.append(len(tokenizer.tokenize(token)))
+			# for current_rationale in original_rationales:
+			# 	tweaked_rationale = []
+			# 	for weight, length in zip(current_rationale, lengths):
+			# 		tweaked_rationale += length * [weight]
+			# 	new_rationales.append(tweaked_rationale)
+
+			# ground_truth = [int(any(weight)) for weight in zip(*new_rationales)]
+   
+			ground_truth = data[key]['rationales']
+			return ground_truth
+
+		def preprocess(tokens):
+			for i in range(len(tokens)):
+				tokens[i] = re.sub(r"[<\*>]", "", tokens[i])
+				tokens[i] = re.sub(r"\b\d+\b", "number", tokens[i])
+			return tokens
+
+		with open(self.path+'datasets/hatexplain.json', 'r') as fp:
+				data = json.load(fp)
+		X = []
+		y = []
+		ground_truth = []
+		for key in data:
+			tokens = data[key]['post_tokens']
+			tokens = preprocess(tokens)
+			text = ' '.join(tokens)
+			annotator_labels = []
+			for i in range(3):
+					annotator_labels.append(data[key]['annotators'][i]['label'])
+		
+			final_label = max(annotator_labels, key=annotator_labels.count)
+		
+			if (annotator_labels.count(final_label) != 1):
+				if (final_label == 'hatespeech'):
+					X.append(text)
+					y.append(int(1))
+					ground_truth.append(getGroundTruth(key, tokens))
+				elif (final_label == 'offensive'):
+					X.append(text)
+					y.append(int(2))
+					ground_truth.append(getGroundTruth(key, tokens))
+				elif (final_label == 'normal'):
+					X.append(text)
+					y.append(int(0))
+					ground_truth.append(int(0))
+		
+		self.x = X
+		self.y = y
+		self.rationales = ground_truth
+		self.label_names = ['noHateSpeech', 'hateSpeech', 'offensive']
 		
 		return self.x , self.y , self.label_names, self.rationales

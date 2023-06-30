@@ -92,8 +92,9 @@ def print_results_ap(ma, label_names, conf):
     for i in range(num_instances):
         maxx = np.argmax(ma['FTP'][i], axis=0)
         ftp.append(np.max(ma['FTP'][i], axis=0))
+        ftp.append(np.zeros(labelset_size))
         nzw.append([np.array(ma['NZW'][i])[:, j][maxx[j]]
-                   for j in range(labelset_size)])
+                for j in range(labelset_size)])
         if 'AUPRC' in ma:
             auprc.append([np.array(ma['AUPRC'][i])[:, j][maxx[j]]
                          for j in range(labelset_size)])
