@@ -85,6 +85,6 @@ The research work was supported by the Hellenic Foundation forResearch and Innov
 Please cite the paper if you use it in your work or experiments :D :
 
 - [Journal] :
-    - TBA
+    - Data mining and Knowledge Discovery: https://link.springer.com/article/10.1007/s10618-023-00962-4 
 - [Preprint] 
     - https://arxiv.org/abs/2209.10876, available on arxiv
